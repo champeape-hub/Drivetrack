@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ur" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Driver Log System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --card: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #f5a623;
+    --accent2: #ff6b35;
+    --green: #22c55e;
+    --red: #ef4444;
+    --text: #f0f0f5;
+    --muted: #888899;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  .header {
+    text-align: center;
+    padding: 24px 16px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+
+  .header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+
+  .header p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+  /* AUTO DATE TIME */
+  .datetime-card {
+    background: linear-gradient(135deg, rgba(245,166,35,0.12), rgba(255,107,53,0.08));
+    border: 1px solid rgba(245,166,35,0.3);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .dt-side .lbl {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .dt-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 19px;
+    font-weight: 800;
+  }
+
+  .date-val { color: var(--accent); }
+  .time-val { color: var(--text); text-align: right; }
+
+  .auto-badge {
+    font-size: 10px;
+    background: var(--green);
+    color: white;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-weight: 700;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* MANUAL FIELDS */
+  .fields-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .field-group {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    transition: border-color 0.3s;
+  }
+
+  .field-group:focus-within { border-color: var(--accent); }
+  .field-group.filled { border-color: var(--green); }
+
+  .field-group label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .field-group input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    width: 100%;
+  }
+
+  .field-group input::placeholder {
+    color: var(--border);
+    font-weight: 400;
+    font-size: 14px;
+  }
+
+  .type-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+
+  .badge-manual { background: rgba(99,102,241,0.2); color: #818cf8; }
+  .badge-voice  { background: rgba(245,166,35,0.2); color: var(--accent); }
+
+  /* VOICE SECTION */
+  .voice-section { margin-bottom: 4px; }
+
+  .voice-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .voice-header span {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .mic-btn {
+    width: 100%;
+    padding: 18px;
+    border-radius: 14px;
+    border: 2px dashed var(--border);
+    background: var(--card);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .mic-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .mic-btn.listening {
+    border-color: var(--red);
+    border-style: solid;
+    background: rgba(239,68,68,0.08);
+    color: var(--red);
+    animation: borderPulse 1.2s infinite;
+  }
+
+  @keyframes borderPulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
+    50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+  }
+
+  .mic-icon { font-size: 22px; }
+  .mic-btn.listening .mic-icon { animation: bounce 0.6s infinite alternate; }
+  @keyframes bounce { from { transform: scale(1); } to { transform: scale(1.2); } }
+
+  .purpose-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-top: 10px;
+    min-height: 56px;
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.6;
+    transition: all 0.3s;
+  }
+
+  .purpose-box.has-text {
+    color: var(--text);
+    border-color: var(--accent);
+    font-weight: 500;
+  }
+
+  .example-box {
+    background: var(--surface);
+    border: 1px dashed rgba(245,166,35,0.2);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-top: 8px;
+  }
+
+  .example-box p { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .example-box strong {
+    color: var(--accent);
+    font-size: 11px;
+    display: block;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* BUTTONS */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0 28px;
+  }
+
+  .btn-save {
+    flex: 1;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .btn-save:active { transform: scale(0.98); }
+
+  .btn-clear {
+    background: var(--card);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* RECORDS */
+  .divider { height: 1px; background: var(--border); margin: 4px 0 24px; }
+
+  .top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .top-row h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .count-badge {
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+
+  .btn-pdf {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid rgba(245,166,35,0.4);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: background 0.2s;
+  }
+
+  .btn-pdf:hover { background: rgba(245,166,35,0.1); }
+
+  .record-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .record-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .record-date { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: var(--accent); }
+  .record-time { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .record-delete {
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 16px; padding: 2px 6px;
+    border-radius: 6px; transition: color 0.2s;
+  }
+  .record-delete:hover { color: var(--red); }
+
+  .record-purpose {
+    background: rgba(245,166,35,0.07);
+    border: 1px solid rgba(245,166,35,0.15);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+
+  .record-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stat {
+    text-align: center;
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 8px;
+  }
+
+  .stat-val { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); }
+  .stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+  .no-records { text-align: center; color: var(--muted); padding: 30px; font-size: 14px; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--green);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: transform 0.3s;
+    z-index: 999;
+    white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error { background: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🚌 Driver Daily Log</h1>
+  <p>روزانہ کا سفری ریکارڈ</p>
+</div>
+
+<!-- AUTO DATE/TIME -->
+<div class="datetime-card">
+  <div class="dt-side">
+    <div class="lbl">تاریخ <span class="auto-badge">AUTO</span></div>
+    <div class="dt-val date-val" id="liveDate">—</div>
+  </div>
+  <div class="dt-side" style="text-align:right">
+    <div class="lbl">وقت <span class="auto-badge">AUTO</span></div>
+    <div class="dt-val time-val" id="liveTime">—</div>
+  </div>
+</div>
+
+<!-- MANUAL FIELDS -->
+<div class="fields-grid">
+  <div class="field-group" id="fg-km">
+    <div class="type-badge badge-manual">✏️ Type karo</div>
+    <label>کلومیٹر (KM)</label>
+    <input type="number" id="f-km" placeholder="جیسے 35" inputmode="numeric">
+  </div>
+  <div class="field-group" id="fg-fuel">
+    <div class="type-badge badge-manual">✏️ Type karo</div>
+    <label>فیول قیمت (Rs)</label>
+    <input type="number" id="f-fuel" placeholder="جیسے 3000" inputmode="numeric">
+  </div>
+</div>
+
+<!-- VOICE FOR PURPOSE -->
+<div class="voice-section">
+  <div class="voice-header">
+    <div class="type-badge badge-voice">🎤 آواز</div>
+    <span>مقصد سفر — آواز سے بولیں</span>
+  </div>
+
+  <button class="mic-btn" id="micBtn" onclick="toggleMic()">
+    <span class="mic-icon">🎤</span>
+    <span id="micStatus">دبائیں اور بولیں</span>
+  </button>
+
+  <div class="purpose-box" id="purposeBox">مقصد سفر یہاں آئے گا...</div>
+
+  <div class="example-box">
+    <strong>مثال — ایسے بولیں</strong>
+    <p>"اسکول بچوں کو لینے گیا، صبح آٹھ بجے، واپسی شام چار بجے"</p>
+  </div>
+</div>
+
+<!-- BUTTONS -->
+<div class="btn-row">
+  <button class="btn-save" onclick="saveRecord()">✅ محفوظ کریں</button>
+  <button class="btn-clear" onclick="clearFields()">🗑 صاف</button>
+</div>
+
+<div class="divider"></div>
+
+<!-- RECORDS -->
+<div class="records-section">
+  <div class="top-row">
+    <h2>📋 ریکارڈز <span class="count-badge" id="recordCount">0</span></h2>
+    <button class="btn-pdf" onclick="exportPDF()">📄 PDF</button>
+  </div>
+  <div id="recordsList">
+    <div class="no-records">ابھی کوئی ریکارڈ نہیں</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let records = JSON.parse(localStorage.getItem('driverLogs_v2') || '[]');
+  let recognition = null;
+  let isListening = false;
+
+  // LIVE CLOCK
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('liveDate').textContent = now.toLocaleDateString('en-PK', {
+      day: '2-digit', month: 'short', year: 'numeric'
+    });
+    document.getElementById('liveTime').textContent = now.toLocaleTimeString('en-PK', {
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // FILL INDICATOR
+  ['km','fuel'].forEach(id => {
+    document.getElementById('f-'+id).addEventListener('input', function() {
+      document.getElementById('fg-'+id).classList.toggle('filled', this.value !== '');
+    });
+  });
+
+  // VOICE
+  function toggleMic() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      showToast('❌ Chrome browser use karein', true); return;
+    }
+    if (isListening) { recognition.stop(); return; }
+
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SR();
+    recognition.lang = 'ur-PK';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+      isListening = true;
+      document.getElementById('micBtn').classList.add('listening');
+      document.getElementById('micStatus').textContent = 'سن رہا ہوں... (روکنے کے لیے دوبارہ دبائیں)';
+      document.getElementById('purposeBox').textContent = '';
+      document.getElementById('purposeBox').classList.remove('has-text');
+    };
+
+    recognition.onresult = (e) => {
+      let t = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript;
+      document.getElementById('purposeBox').textContent = t;
+      document.getElementById('purposeBox').classList.add('has-text');
+    };
+
+    recognition.onend = () => {
+      isListening = false;
+      document.getElementById('micBtn').classList.remove('listening');
+      document.getElementById('micStatus').textContent = 'دبائیں اور بولیں';
+    };
+
+    recognition.onerror = (e) => { showToast('❌ ' + e.error, true); recognition.stop(); };
+    recognition.start();
+  }
+
+  // SAVE
+  function saveRecord() {
+    const now = new Date();
+    const km = document.getElementById('f-km').value.trim();
+    const fuel = document.getElementById('f-fuel').value.trim();
+    const purposeEl = document.getElementById('purposeBox');
+    const purpose = purposeEl.textContent.trim();
+    const emptyPurpose = purpose === 'مقصد سفر یہاں آئے گا...' || purpose === '';
+
+    if (!km && !fuel && emptyPurpose) {
+      showToast('❌ کچھ تو بھریں', true); return;
+    }
+
+    records.unshift({
+      id: Date.now(),
+      date: now.toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' }),
+      time: now.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit', hour12: true }),
+      km: km || '—',
+      fuel: fuel || '—',
+      purpose: emptyPurpose ? '—' : purpose
+    });
+
+    localStorage.setItem('driverLogs_v2', JSON.stringify(records));
+    renderRecords();
+    clearFields();
+    showToast('✅ محفوظ ہو گیا');
+  }
+
+  // RENDER
+  function renderRecords() {
+    const list = document.getElementById('recordsList');
+    document.getElementById('recordCount').textContent = records.length;
+    if (!records.length) {
+      list.innerHTML = '<div class="no-records">ابھی کوئی ریکارڈ نہیں</div>'; return;
+    }
+    list.innerHTML = records.map(r => `
+      <div class="record-card">
+        <div class="record-top">
+          <div>
+            <div class="record-date">📅 ${r.date}</div>
+            <div class="record-time">🕐 ${r.time}</div>
+          </div>
+          <button class="record-delete" onclick="deleteRecord(${r.id})">✕</button>
+        </div>
+        ${r.purpose !== '—' ? `<div class="record-purpose">📍 ${r.purpose}</div>` : ''}
+        <div class="record-stats">
+          <div class="stat">
+            <div class="stat-val">${r.km} km</div>
+            <div class="stat-lbl">کلومیٹر</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">Rs ${r.fuel}</div>
+            <div class="stat-lbl">فیول</div>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function deleteRecord(id) {
+    records = records.filter(r => r.id !== id);
+    localStorage.setItem('driverLogs_v2', JSON.stringify(records));
+    renderRecords();
+    showToast('🗑 ہٹا دیا');
+  }
+
+  function clearFields() {
+    ['km','fuel'].forEach(id => {
+      document.getElementById('f-'+id).value = '';
+      document.getElementById('fg-'+id).classList.remove('filled');
+    });
+    document.getElementById('purposeBox').textContent = 'مقصد سفر یہاں آئے گا...';
+    document.getElementById('purposeBox').classList.remove('has-text');
+  }
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => t.className = 'toast', 2500);
+  }
+
+  // PDF
+  function exportPDF() {
+    if (!records.length) { showToast('❌ کوئی ریکارڈ نہیں', true); return; }
+    const win = window.open('', '_blank');
+    win.document.write(`
+      <html><head><meta charset="UTF-8"><style>
+        body{font-family:Arial;padding:30px;direction:rtl}
+        h1{color:#f5a623;text-align:center}
+        p.sub{text-align:center;color:#888;font-size:13px;margin-bottom:20px}
+        table{width:100%;border-collapse:collapse}
+        th{background:#f5a623;color:white;padding:10px 12px;font-size:13px}
+        td{padding:9px 12px;border:1px solid #e5e5e5;font-size:13px}
+        tr:nth-child(even) td{background:#fafafa}
+      </style></head><body>
+      <h1>🚌 Driver Daily Log</h1>
+      <p class="sub">Export: ${new Date().toLocaleDateString('en-PK')}</p>
+      <table>
+        <tr><th>تاریخ</th><th>وقت</th><th>مقصد سفر</th><th>KM</th><th>فیول (Rs)</th></tr>
+        ${records.map(r=>`<tr><td>${r.date}</td><td>${r.time}</td><td>${r.purpose}</td><td>${r.km}</td><td>${r.fuel}</td></tr>`).join('')}
+      </table></body></html>`);
+    win.document.close();
+    setTimeout(() => win.print(), 500);
+  }
+
+  renderRecords();
+</script>
+</body>
+</html>
